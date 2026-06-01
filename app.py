@@ -1,4 +1,4 @@
-# app.py - 폐암 위험 예측 (자동 전처리 + 숫자 열만 사용)
+# app.py - 폐암 위험 예측 (한글 폰트 깨짐 해결)
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -9,6 +9,22 @@ from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
+import matplotlib.font_manager as fm
+
+# -------------------------------
+# 한글 폰트 설정 (Nanum)
+# -------------------------------
+def setup_korean_font():
+    # 시스템에 설치된 폰트 중 Nanum 찾기
+    font_list = [f.name for f in fm.fontManager.ttflist if 'Nanum' in f.name]
+    if font_list:
+        plt.rcParams['font.family'] = font_list[0]
+    else:
+        # fallback: 첫 번째 한글 가능 폰트
+        plt.rcParams['font.family'] = 'DejaVu Sans'
+    plt.rcParams['axes.unicode_minus'] = False  # 마이너스 기호 깨짐 방지
+
+setup_korean_font()
 
 # -------------------------------
 # 페이지 설정
@@ -125,7 +141,7 @@ if os.path.exists("lung.csv"):
     with col2:
         st.dataframe(numeric_df.describe(), use_container_width=True)
     
-    # 상관관계 히트맵 (숫자 열만)
+    # 상관관계 히트맵 (숫자 열만) - 한글 라벨 정상 출력됨
     if numeric_df.shape[1] > 1:
         st.subheader("🔍 특성 간 상관관계")
         fig, ax = plt.subplots(figsize=(10, 6))
@@ -156,9 +172,7 @@ with st.form("pred_form"):
     submitted = st.form_submit_button("🩺 위험도 예측하기")
 
 if submitted:
-    # 입력값을 numpy 배열로 변환
     input_array = np.array([input_data])
-    # 스케일러는 이미 학습된 것 사용
     input_scaled = scaler.transform(input_array)
     pred = model.predict(input_scaled)[0]
     proba = model.predict_proba(input_scaled)[0]
@@ -170,7 +184,7 @@ if submitted:
     else:
         st.success(f"## 🟢 위험도: 낮음 (정상 확률 {proba[0]*100:.1f}%)")
     
-    # 특성 중요도 시각화
+    # 특성 중요도 시각화 (한글 라벨)
     if hasattr(model, "feature_importances_"):
         st.subheader("📌 영향력 높은 요인")
         importances = model.feature_importances_
